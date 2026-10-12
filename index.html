@@ -1,0 +1,264 @@
+const products = [
+  {
+    id: 1,
+    title: "Disciplina: Faça Mesmo Sem Vontade",
+    category: "Disciplina",
+    price: 19.90,
+    description: "Aprenda a criar consistência sem depender da motivação perfeita.",
+    symbol: "↗",
+    color: "#202d24"
+  },
+  {
+    id: 2,
+    title: "Foco no Que Importa",
+    category: "Foco",
+    price: 17.90,
+    description: "Organize prioridades e reduza distrações.",
+    symbol: "◎",
+    color: "#b4dc8b"
+  },
+  {
+    id: 3,
+    title: "Hábitos que Permanecem",
+    category: "Hábitos",
+    price: 21.90,
+    description: "Construa hábitos e uma rotina mais consistente.",
+    symbol: "↻",
+    color: "#26364a"
+  },
+  {
+    id: 4,
+    title: "Mentalidade em Construção",
+    category: "Mentalidade",
+    price: 18.90,
+    description: "Desenvolva novas perspectivas e aprenda com desafios.",
+    symbol: "✳",
+    color: "#3a2945"
+  },
+  {
+    id: 5,
+    title: "Pare de Adiar",
+    category: "Disciplina",
+    price: 16.90,
+    description: "Dê o primeiro passo e enfrente a procrastinação.",
+    symbol: "→",
+    color: "#49362a"
+  },
+  {
+    id: 6,
+    title: "Rotina com Intenção",
+    category: "Hábitos",
+    price: 22.90,
+    description: "Organize sua rotina respeitando suas prioridades.",
+    symbol: "⌁",
+    color: "#253c38"
+  }
+];
+
+let currentFilter = "Todos";
+
+function formatPrice(price) {
+  return price.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL"
+  });
+}
+
+function createProductCard(product) {
+  return `
+    <article class="product-card">
+      <div class="cover" style="background:${product.color}">
+        <span class="cover-tag">
+          EVOLUX / E-BOOK ${String(product.id).padStart(2, "0")}
+        </span>
+
+        <div class="cover-symbol">${product.symbol}</div>
+
+        <h2 class="cover-title">${product.title}</h2>
+
+        <span class="cover-foot">CONHECIMENTO QUE MOVE</span>
+      </div>
+
+      <div class="product-info">
+        <span class="product-category">${product.category}</span>
+
+        <h3>${product.title}</h3>
+
+        <p>${product.description}</p>
+
+        <div class="product-bottom">
+          <strong class="product-price">
+            ${formatPrice(product.price)}
+          </strong>
+
+          <button class="mini-button" data-buy="${product.id}">
+            Ver detalhes ↗
+          </button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
+function renderProducts() {
+  const grid = document.getElementById("product-grid");
+  const searchInput = document.getElementById("product-search");
+  const emptyState = document.getElementById("empty-state");
+
+  if (!grid) return;
+
+  const search = (searchInput?.value || "").toLowerCase();
+
+  const filteredProducts = products.filter(product => {
+    const matchesCategory =
+      currentFilter === "Todos" ||
+      product.category === currentFilter;
+
+    const matchesSearch =
+      `${product.title} ${product.category} ${product.description}`
+        .toLowerCase()
+        .includes(search);
+
+    return matchesCategory && matchesSearch;
+  });
+
+  grid.innerHTML = filteredProducts
+    .map(createProductCard)
+    .join("");
+
+  if (emptyState) {
+    emptyState.classList.toggle(
+      "hidden",
+      filteredProducts.length > 0
+    );
+  }
+}
+
+function renderFeaturedProducts() {
+  const grid = document.getElementById("featured-products");
+
+  if (!grid) return;
+
+  grid.innerHTML = products
+    .slice(0, 3)
+    .map(createProductCard)
+    .join("");
+}
+
+function navigate(page) {
+  const sections = document.querySelectorAll(".page-section");
+
+  sections.forEach(section => {
+    section.classList.add("hidden");
+  });
+
+  let targetId = page;
+
+  if (page === "sobre") {
+    targetId = "sobre-pagina";
+  }
+
+  const target = document.getElementById(targetId);
+
+  if (target) {
+    target.classList.remove("hidden");
+  }
+
+  document.querySelectorAll(".nav-link").forEach(link => {
+    link.classList.toggle(
+      "active",
+      link.dataset.page === page
+    );
+  });
+
+  document.querySelector(".nav-links")?.classList.remove("open");
+
+  document.querySelector(".menu-toggle")
+    ?.setAttribute("aria-expanded", "false");
+
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+}
+
+// Navegação, filtros e botões dos produtos
+document.addEventListener("click", event => {
+  const navLink = event.target.closest('a[href^="#"]');
+
+  if (navLink) {
+    const page = navLink.getAttribute("href").slice(1);
+
+    if (["inicio", "produtos", "sobre"].includes(page)) {
+      event.preventDefault();
+      navigate(page);
+      history.replaceState(null, "", `#${page}`);
+    }
+  }
+
+  const filterButton = event.target.closest("[data-filter]");
+
+  if (filterButton) {
+    currentFilter = filterButton.dataset.filter;
+
+    document.querySelectorAll(".filter-button").forEach(button => {
+      button.classList.toggle(
+        "selected",
+        button === filterButton
+      );
+    });
+
+    renderProducts();
+  }
+
+  const buyButton = event.target.closest("[data-buy]");
+
+  if (buyButton) {
+    const product = products.find(
+      item => item.id === Number(buyButton.dataset.buy)
+    );
+
+    if (product) {
+      alert(
+        `${product.title}\n\n` +
+        `${product.description}\n\n` +
+        `Preço: ${formatPrice(product.price)}\n\n` +
+        `A compra online ainda precisa ser configurada.`
+      );
+    }
+  }
+});
+
+// Pesquisa
+document
+  .getElementById("product-search")
+  ?.addEventListener("input", renderProducts);
+
+// Menu para celular
+document.querySelector(".menu-toggle")?.addEventListener("click", () => {
+  const menu = document.querySelector(".nav-links");
+
+  if (!menu) return;
+
+  const isOpen = menu.classList.toggle("open");
+
+  document.querySelector(".menu-toggle")
+    ?.setAttribute("aria-expanded", String(isOpen));
+});
+
+// Ano automático no rodapé
+const yearElement = document.getElementById("year");
+
+if (yearElement) {
+  yearElement.textContent = new Date().getFullYear();
+}
+
+// Inicialização
+renderFeaturedProducts();
+renderProducts();
+
+const initialPage = location.hash.replace("#", "");
+
+if (["produtos", "sobre"].includes(initialPage)) {
+  navigate(initialPage);
+}
